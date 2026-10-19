@@ -12,7 +12,7 @@ pkg_check_modules(CURL REQUIRED IMPORTED_TARGET libcurl)
 pkg_check_modules(ARCHIVE REQUIRED IMPORTED_TARGET libarchive)
 pkg_check_modules(TOMLPLUSPLUS REQUIRED IMPORTED_TARGET tomlplusplus)
 
-add_executable(smect
+add_executable(omi
     src/main.cpp
     src/recipe.cpp
     src/download.cpp
@@ -23,7 +23,7 @@ add_executable(smect
     src/sync.cpp
 )
 
-target_link_libraries(smect PRIVATE
+target_link_libraries(omi PRIVATE
     PkgConfig::CURL
     PkgConfig::ARCHIVE
     PkgConfig::TOMLPLUSPLUS

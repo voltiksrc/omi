@@ -47,13 +47,13 @@ sudo meson install -C build
 Binary install(later):
 
 ```bash
-sudo omi install fastfetch --binary
+sudo omi -Fetch fastfetch --binary
 ```
 
 Source install:
 
 ```bash
-sudo omi install fastfetch
+sudo omi -Fetch fastfetch
 ```
 
 ## Status

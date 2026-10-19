@@ -23,17 +23,17 @@ bool is_source_root(const fs::path &path) {
 
 // version command
 void smversion() {
-  constexpr std::string_view version{"0.03"};
-  std::cout << "omi v" << version << '\n';
+  constexpr std::string_view version{"0.50"};
+  std::cout << "omi version " << version << '\n';
 }
 
 // help command
 void show_help() {
   std::cout << "Omi Package manager help\n";
   std::cout << '\n';
-  std::cout << "Example: sudo omi install fastfetch\n";
+  std::cout << "Example: sudo omi -Fetch fastfetch\n";
   std::cout << "Options:\n";
-  std::cout << "omi install <package>\n";
+  std::cout << "omi -Fetch <package>\n";
   std::cout << "omi remove <package>\n";
   std::cout << "omi search <package>\n";
   std::cout << "omi --help\n";
@@ -153,7 +153,7 @@ int main(int argc, char *argv[]) {
   // package.
   string package = argv[2];
 
-  if (command == "install") {
+  if (command == "-Fetch") {
     for (int i = 2; i < argc; ++i) {
       if (!install_package(argv[i])) {
         return 1;
