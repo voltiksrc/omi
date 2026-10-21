@@ -20,6 +20,8 @@ add_executable(omi
     src/extract.cpp
     src/build.cpp
     src/install.cpp
+    src/stage.cpp
+    src/process.cpp
     src/sync.cpp
 )
 

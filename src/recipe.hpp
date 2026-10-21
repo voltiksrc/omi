@@ -1,6 +1,13 @@
 #pragma once
 
 #include <string>
+#include <filesystem>
+
+bool download_recipe(
+    const std::string& url,
+    const std::filesystem::path& destination
+);
+
 
 struct Package {
     std::string name;
