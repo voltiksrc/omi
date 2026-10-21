@@ -5,12 +5,13 @@
 #include "install.hpp"
 #include "output.hpp"
 #include "sync.hpp"
+#include "database.hpp"
 
 using std::string;
 
 // version command
 void smversion() {
-  constexpr std::string_view version{"0.50"};
+  constexpr std::string_view version{"1.0"};
   std::cout << "omi version " << version << '\n';
 }
 

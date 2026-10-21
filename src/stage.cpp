@@ -20,7 +20,7 @@ bool stage_source(const Package &info,
     std::string destdir = "DESTDIR=" + absolute_path.string();
 
     if (info.build_system == "make") {
-        if (run_command({"make", "install"}, source_dir, {destdir}) != 0) {
+        if (run_command({"make", "install", "PREFIX=" + (absolute_path / "usr").string()}, source_dir, {destdir}) != 0) {
             output::error("Failed to stage Make files.");
             return false;
         }

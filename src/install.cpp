@@ -4,6 +4,7 @@
 #include <toml++/toml.hpp>
 
 #include "build.hpp"
+#include "deploy.hpp"
 #include "download.hpp"
 #include "extract.hpp"
 #include "install.hpp"
@@ -122,5 +123,10 @@ bool install_package(const string &package) {
         return false;
     }
     std::cout << ">> Files staged successfully.\n";
+
+    if (!install_staged_files(".cache/stage/tree-2.3.2", "/tmp/omi-test-root")) {
+        output::error("Failed to install staged files.");
+        return false;
+    }
     return true;
 }

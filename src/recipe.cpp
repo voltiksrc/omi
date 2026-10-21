@@ -4,6 +4,7 @@
 #include <fstream>
 #include <iostream>
 #include <string>
+#include <system_error>
 
 #include "recipe.hpp"
 
@@ -77,7 +78,7 @@ bool download_recipe(const std::string& url, const std::filesystem::path& destin
         return false;
     }
     std::error_code ec;
-    fs::rename(output_path, final_name);
+    fs::rename(output_path, final_name, ec);
     if (ec) {
         std::cerr<<"Failed to rename recipe: "<<ec.message()<<'\n';
         fs::remove(output_path);

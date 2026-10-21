@@ -1,4 +1,3 @@
-
 #include "build.hpp"
 #include "output.hpp"
 #include "process.hpp"
@@ -27,7 +26,6 @@ bool build_source(const Package &info, const std::filesystem::path &source_dir) 
             output::error("Make compile failed.");
             return false;
         }
-
     } else if (info.build_system == "meson") {
         output::info("Configuring with Meson...");
 
