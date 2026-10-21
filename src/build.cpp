@@ -66,6 +66,6 @@ bool build_source(const Package &info, const std::filesystem::path &source_dir) 
         return false;
     }
 
-    output::info("Build completed successfully.");
+    std::cout<< "Build completed successfully.\n";
     return true;
 }

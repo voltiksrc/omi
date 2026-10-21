@@ -1,6 +1,7 @@
 # Build files
 build/
 compile_commands.json
+recipes
 
 # Cache files
 .cache/
