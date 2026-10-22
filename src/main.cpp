@@ -30,6 +30,7 @@ void show_help() {
     std::cout << "  --sync             Sync repositories\n";
     std::cout << "  --version          Show Omi version\n";
     std::cout << "  --help             Show this menu\n";
+    std::cout << '\n';
 }
 
 int main(int argc, char *argv[]) {
@@ -43,7 +44,7 @@ int main(int argc, char *argv[]) {
     string command = argv[1];
 
     // command line interactions so commands actually do something
-    if (command == "--help") {
+    if (command == "--help" || command == "-h") {
         show_help();
         return 0;
     } else if (command == "--version") {
@@ -82,7 +83,7 @@ int main(int argc, char *argv[]) {
     // package.
     string package = argv[2];
 
-    if (command == "-Fetch") {
+    if (command == "-Fetch" || command == "-FETCH" || command == "-fetch") {
         for (int i = 2; i < argc; ++i) {
             if (!install_package(argv[i])) {
                 return 1;

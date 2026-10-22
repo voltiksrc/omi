@@ -19,10 +19,14 @@ using std::string;
 namespace fs = std::filesystem;
 
 bool is_source_root(const fs::path &path) {
-    return fs::exists(path / "meson.build") || fs::exists(path / "CMakeLists.txt") ||
-           fs::exists(path / "configure") || fs::exists(path / "Makefile") ||
-           fs::exists(path / "Cargo.toml" || fs::exists(path / "wscript") ||
-           fs::exists(path / "go.mod"));
+    return fs::exists(path / "meson.build") ||
+           fs::exists(path / "CMakeLists.txt") ||
+           fs::exists(path / "configure") ||
+           fs::exists(path / "Makefile") ||
+           fs::exists(path / "Cargo.toml") ||
+           fs::exists(path / "wscript") ||
+           fs::exists(path / "go.mod") ||
+           fs::exists(path / "configure.ac");
 }
 
 bool install_package(const string &package) {
@@ -155,18 +159,19 @@ bool install_package(const string &package) {
 
     output::stage("Deploying " + info.name + "-" + info.version);
 
-    if (!install_staged_files(stage_dir, target_root, installed_files)) {
-        output::error("Deployment failed.");
+    Deployment deployment;
+
+    if (!install_staged_files(stage_dir, target_root, deployment)) {
         return false;
     }
 
-    if (!db.record_installation(info.name, info.version, installed_files)) {
+    if (!db.record_installation(info.name, info.version, deployment.files)) {
         output::error("Failed to record installation.");
 
         output::stage("Rolling back installation...");
 
-        if (!rollback_deployment(target_root, installed_files)) {
-            output::error("Rollback incomplete, manual recovery may be needed");
+        if (!rollback_deployment(target_root, deployment)) {
+            output::error("Rollback incomplete");
         }
 
         return false;

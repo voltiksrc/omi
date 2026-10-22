@@ -5,6 +5,7 @@
 #include <iostream>
 #include <string>
 #include <string_view>
+#include <iomanip>
 
 #include "download.hpp"
 
@@ -15,45 +16,54 @@ using std::string;
 // Progress state
 struct Progress {
     int last_percentage = -1;
+    curl_off_t downloaded = 0;
+    curl_off_t total = 0;
 };
 
-// Progress bar
-
-int progress_callback(void *clientp, curl_off_t dltotal, curl_off_t dlnow, curl_off_t ultotal,
-                      curl_off_t ulnow) {
+int progress_callback(void *clientp, curl_off_t dltotal, curl_off_t dlnow,
+                      curl_off_t ultotal, curl_off_t ulnow) {
     auto *progress = static_cast<Progress *>(clientp);
 
-    if (dltotal > 0) {
-        constexpr int bar_width = 22;
+    progress->downloaded = dlnow;
+    progress->total = dltotal;
 
-        // Calculate the percentage and how much of the bar is filled.
-        int percentage = static_cast<double>(dlnow) / dltotal * 100;
-        int filled = percentage * bar_width / 100;
+    if (dltotal <= 0)
+        return 0;
 
-        if (percentage != progress->last_percentage) {
-            std::cout << "\r[";
+    constexpr int bar_width = 22;
+    constexpr double mib = 1024.0 * 1024.0;
 
-            // Print the completed part of the bar.
-            for (int i = 0; i < bar_width; i++) {
-                if (percentage == 100) {
-                    std::cout << "━";
-                } else if (i == std::max(0, filled - 1)) {
-                    // Put the arrow at the end of the completed part.
-                    std::cout << "❯";
-                } else if (i < filled) {
-                    std::cout << "━";
-                } else {
-                    // Print dots for the remaining download.
-                    std::cout << "·";
-                }
-            }
+    int percentage = std::clamp(
+        static_cast<int>(static_cast<double>(dlnow) / dltotal * 100),
+        0, 100
+    );
 
-            std::cout << "] " << percentage << "%" << std::flush;
+    if (percentage == progress->last_percentage)
+        return 0;
 
-            progress->last_percentage = percentage;
-        }
+    int filled = percentage * bar_width / 100;
+
+    std::cout << "\r" << std::setw(3) << percentage << "%  ";
+
+    // Draw the completed part, then the arrow
+    for (int i = 0; i < bar_width; ++i) {
+        if (i < filled)
+            std::cout << "=";
+        else if (i == filled)
+            std::cout << ">";
+        else
+            std::cout << " ";
     }
 
+    // Show how much we've downloaded
+    std::cout << "  "
+              << std::fixed << std::setprecision(1)
+              << static_cast<double>(dlnow) / mib
+              << " / "
+              << static_cast<double>(dltotal) / mib
+              << " MiB" << std::flush;
+
+    progress->last_percentage = percentage;
     return 0;
 }
 
@@ -138,21 +148,13 @@ string download_source(const string &source_url, const string &name, const strin
 
     CURLcode result = curl_easy_perform(curl);
 
-    if (result == CURLE_OK && progress.last_percentage < 100) {
-        std::cout << "\r[";
-
-        for (int i = 0; i < 22; ++i) {
-            std::cout << "━";
-        }
-
-        std::cout << "] 100%" << std::flush;
-    }
-
-    if (progress.last_percentage >= 0 || result == CURLE_OK) {
-        std::cout << '\n';
+    if (result == CURLE_OK && progress.total > 0 &&
+        progress.last_percentage < 100) {
+        progress_callback(&progress, progress.total, progress.total, 0, 0);
     }
 
     std::cout << '\n';
+ 
     // long http_code{0};
     // curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &http_code
     // print a newline and make sure to exit if the download fails.

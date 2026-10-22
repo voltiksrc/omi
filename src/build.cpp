@@ -15,7 +15,7 @@ bool build_source(const Package &info, const std::filesystem::path &source_dir) 
             output::info("Running configure...");
 
             if (run_command({"./configure", "--prefix=/usr"}, source_dir) != 0) {
-                output::error("Make configure failed.");
+                output::error("Make configure failed, how about you fix it yourself?");
                 return false;
             }
         }
@@ -23,21 +23,21 @@ bool build_source(const Package &info, const std::filesystem::path &source_dir) 
         output::info("Running make...");
 
         if (run_command({"make", "-j4"}, source_dir) != 0) {
-            output::error("Make compile failed.");
+            output::error("Make compile failed sadly.");
             return false;
         }
     } else if (info.build_system == "meson") {
         output::info("Configuring with Meson...");
 
         if (run_command({"meson", "setup", "build", "--prefix=/usr"}, source_dir) != 0) {
-            output::error("Meson setup failed.");
+            output::error("Meson setup failed. How about you switch to cmake?");
             return false;
         }
 
         output::info("Compiling with Meson...");
 
         if (run_command({"meson", "compile", "-C", "build"}, source_dir) != 0) {
-            output::error("Meson compile failed.");
+            output::error("Meson compile failed, CMake is better anyway.");
             return false;
         }
 
@@ -48,14 +48,14 @@ bool build_source(const Package &info, const std::filesystem::path &source_dir) 
                 "cmake", "-S", ".", "-B", "build",
                 "-DCMAKE_INSTALL_PREFIX=/usr"
             }, source_dir) != 0) {
-            output::error("CMake configure failed.");
+            output::error("CMake configure failed so fix it.");
             return false;
         }
 
         output::info("Compiling with CMake...");
 
         if (run_command({"cmake", "--build", "build", "--parallel"}, source_dir) != 0) {
-            output::error("CMake build failed.");
+            output::error("oh dude, cmake build failed? oh well.");
             return false;
         } 
 
@@ -63,7 +63,7 @@ bool build_source(const Package &info, const std::filesystem::path &source_dir) 
         output::info("Building with Cargo...");
 
         if (run_command({"cargo", "build", "--release"}, source_dir) != 0) {
-            output::error("Cargo build failed.");
+            output::error("oh dude, cargo build failed? oh well.");
             return false;
         }
     } else if (info.build_system == "waf") {
@@ -71,13 +71,13 @@ bool build_source(const Package &info, const std::filesystem::path &source_dir) 
 
         // Waf uses a configure step before compile
         if (run_command({"./waf", "configure", "--prefix=/usr"}, source_dir) != 0) {
-            output::error("Waf configuration failed.");
+            output::error("oh dude what? waf configuration failed? oh well.");
             return false;
         }
 
         // Compile the package using its Waf build script
         if (run_command({"./waf", "build"}, source_dir) != 0) {
-            output::error("Waf build failed.");
+            output::error("Aww man waf build failed.");
             return false;
         }
     } else if (info.build_system == "go") {
@@ -91,7 +91,7 @@ bool build_source(const Package &info, const std::filesystem::path &source_dir) 
          fs::path binary = build_dir / info.name;
 
          if (run_command({"go", "build", "-o", binary.string(), "."}, source_dir) != 0) {
-             output::error("Go build failed.");
+             output::error("Go build failed, and you should go fix it.");
              return false;
          }
     } else {
@@ -99,6 +99,6 @@ bool build_source(const Package &info, const std::filesystem::path &source_dir) 
         return false;
     }
 
-    output::stage("Build completed successfully.");
+    output::stage("Build completed successfully. WOOHOO");
     return true;
 }
