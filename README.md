@@ -1,10 +1,11 @@
 # omi
 
-A Hybrid C++ package manager that uses TOML recipes and has a simple codebase.
+A Hybrid C++ package manager that uses TOML recipes and has a relatively simple codebase.
 
 ## Development
 
-It is an independent package manager that anyone can use, if you would like to help develop omi, then please contact me at: voltiksrc@gmail.com
+It is an independent package manager that anyone can use, if you would
+like to help develop omi, then please contact me at: voltiksrc@gmail.com
 
 ## Features
 
@@ -12,8 +13,9 @@ It is an independent package manager that anyone can use, if you would like to h
 - TOML Recipes
 - SHA256 Verification
 - Archive Extraction
-- Source building (Which only supports CMake, Make, and Meson.)
+- Source building which supports 6 types
 - Install staging
+- Merging into root
 
 ## Dependencies
 
@@ -21,8 +23,15 @@ It is an independent package manager that anyone can use, if you would like to h
 - libcurl
 - libcrypto
 - CMake
-- toml++
+- Toml++
 - Ninja
+- Make/Autotools
+- Meson
+
+## Recommended dependencies
+- Go
+- Cargo
+- Waf
 
 ## Build
 
@@ -58,5 +67,4 @@ sudo omi -Fetch fastfetch
 
 ## Status
 
-It's able to download a source tarball into a cache file, verify with SHA256, extract,
-build it, and finally stage it.(Im almost at installation)
+It's able to download a tarball, verify with sha256, extract, stage, install.

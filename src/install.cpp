@@ -1,9 +1,10 @@
 #include <filesystem>
-#include <iostream>
 #include <string>
 #include <toml++/toml.hpp>
+#include <vector>
 
 #include "build.hpp"
+#include "database.hpp"
 #include "deploy.hpp"
 #include "download.hpp"
 #include "extract.hpp"
@@ -19,7 +20,9 @@ namespace fs = std::filesystem;
 
 bool is_source_root(const fs::path &path) {
     return fs::exists(path / "meson.build") || fs::exists(path / "CMakeLists.txt") ||
-           fs::exists(path / "configure") || fs::exists(path / "Makefile");
+           fs::exists(path / "configure") || fs::exists(path / "Makefile") ||
+           fs::exists(path / "Cargo.toml" || fs::exists(path / "wscript") ||
+           fs::exists(path / "go.mod"));
 }
 
 bool install_package(const string &package) {
@@ -57,6 +60,30 @@ bool install_package(const string &package) {
     }
 
     Package info = read_recipe(recipe_path.string());
+
+    fs::path target_root = "/tmp/omi-test-root";
+    fs::path database_path = target_root / "var/lib/omi/installed.db";
+
+    fs::create_directories(database_path.parent_path());
+
+    Database db(database_path);
+
+    if (!db.initialize()) {
+        output::error("Failed to initialize database.");
+        return false;
+    }
+
+    InstallStatus status = db.is_installed(info.name);
+
+    if (status == InstallStatus::Error) {
+        output::error("Could not check package installation status");
+        return false;
+    }
+
+    if (status == InstallStatus::Installed) {
+        output::error("Package already installed: " + info.name);
+        return false;
+    }
 
     // Checks if any of the stages are empty and if it is we exit before doing the
     // DEBI steps.
@@ -122,11 +149,29 @@ bool install_package(const string &package) {
         output::error("Installation staging failed.");
         return false;
     }
-    std::cout << ">> Files staged successfully.\n";
+    output::info("Files staged successfully.");
 
-    if (!install_staged_files(".cache/stage/tree-2.3.2", "/tmp/omi-test-root")) {
-        output::error("Failed to install staged files.");
+    std::vector<fs::path> installed_files;
+
+    output::stage("Deploying " + info.name + "-" + info.version);
+
+    if (!install_staged_files(stage_dir, target_root, installed_files)) {
+        output::error("Deployment failed.");
         return false;
     }
+
+    if (!db.record_installation(info.name, info.version, installed_files)) {
+        output::error("Failed to record installation.");
+
+        output::stage("Rolling back installation...");
+
+        if (!rollback_deployment(target_root, installed_files)) {
+            output::error("Rollback incomplete, manual recovery may be needed");
+        }
+
+        return false;
+    }
+
+    output::info("Package installed successfully.");
     return true;
 }

@@ -1,4 +1,4 @@
-#include "download.hpp"
+#include <algorithm>
 #include <curl/curl.h>
 #include <filesystem>
 #include <fstream>
@@ -6,47 +6,56 @@
 #include <string>
 #include <string_view>
 
+#include "download.hpp"
+
 using std::string;
 
 // DEBI means download, extract, build, and install.
 
 // Progress state
 struct Progress {
-    int last_percentage{-1};
+    int last_percentage = -1;
 };
 
-// Progress callback
-int progress_callback(void* clientp, curl_off_t dltotal,
-                      curl_off_t dlnow, curl_off_t ultotal,
-                      curl_off_t ulnow) {
-    auto* progress = static_cast<Progress*>(clientp);
+// Progress bar
 
-    // Your existing progress bar logic here
+int progress_callback(void *clientp, curl_off_t dltotal, curl_off_t dlnow, curl_off_t ultotal,
+                      curl_off_t ulnow) {
+    auto *progress = static_cast<Progress *>(clientp);
+
     if (dltotal > 0) {
-        int percentage;
         constexpr int bar_width = 22;
-        int filled;
-        // Calculations here:
-        percentage = static_cast<double>(dlnow) / dltotal * 100;
+
+        // Calculate the percentage and how much of the bar is filled.
+        int percentage = static_cast<double>(dlnow) / dltotal * 100;
+        int filled = percentage * bar_width / 100;
+
         if (percentage != progress->last_percentage) {
-            filled = percentage * bar_width / 100;
-            std::cout<<"[";
-            // This prints the # in the bar while it fills
-            for (int i = 0; i < filled; i++) {
-                std::cout<<"#";
+            std::cout << "\r[";
+
+            // Print the completed part of the bar.
+            for (int i = 0; i < bar_width; i++) {
+                if (percentage == 100) {
+                    std::cout << "━";
+                } else if (i == std::max(0, filled - 1)) {
+                    // Put the arrow at the end of the completed part.
+                    std::cout << "❯";
+                } else if (i < filled) {
+                    std::cout << "━";
+                } else {
+                    // Print dots for the remaining download.
+                    std::cout << "·";
+                }
             }
-            // This prints the - as empty space so we can tell the progress
-            for (int i = filled; i < bar_width; i++) {
-                std::cout<<"-";
-            }
-            std::cout<<"]"; 
-            std::cout<<" "<<percentage<<"%\r"<<std::flush; 
+
+            std::cout << "] " << percentage << "%" << std::flush;
+
             progress->last_percentage = percentage;
         }
     }
+
     return 0;
 }
-
 
 // Main libcurl function that writes our data to a file so we can DEBI
 // peacefully.
@@ -55,13 +64,16 @@ static size_t write_callback(char *ptr, size_t size, size_t nmemb, void *userdat
 
     auto *file = static_cast<std::ofstream *>(userdata);
 
-    file->write(ptr, total);
+    file->write(ptr, static_cast<std::streamsize>(total));
+
+    if (!*file) {
+        return 0;
+    }
 
     return total;
 }
 
-string download_source(const string &source_url, const string &name,
-                       const string &version) {
+string download_source(const string &source_url, const string &name, const string &version) {
     // Initialize libcurl so we can download and write data
     // using its functions.
     CURL *curl = curl_easy_init();
@@ -72,7 +84,8 @@ string download_source(const string &source_url, const string &name,
 
     string extension;
 
-    for (const std::string_view ext : {".tar.gz", ".tar.xz", ".tar.bz2", ".tar.zst", ".zip"}) {
+    for (const std::string_view ext :
+         {".tar.gz", ".tar.xz", ".tar.bz2", ".tar.zst", ".zip", ".tar.lz"}) {
         if (source_url.find(ext) != string::npos) {
             extension = ext;
             break;
@@ -110,25 +123,44 @@ string download_source(const string &source_url, const string &name,
     curl_easy_setopt(curl, CURLOPT_XFERINFOFUNCTION, progress_callback);
 
     curl_easy_setopt(curl, CURLOPT_XFERINFODATA, &progress);
- 
+
     curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 0L);
-    
+
+    // Enable timeouts when a url hangs
+    curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, 10L);
+    curl_easy_setopt(curl, CURLOPT_TIMEOUT, 120L);
+
     // Require HTTPS and verify TLS certificates.
     curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 1L);
     curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 2L);
     curl_easy_setopt(curl, CURLOPT_PROTOCOLS_STR, "https");
     curl_easy_setopt(curl, CURLOPT_REDIR_PROTOCOLS_STR, "https");
 
-    CURLcode result = curl_easy_perform(curl); // The actual download process here.
+    CURLcode result = curl_easy_perform(curl);
+
+    if (result == CURLE_OK && progress.last_percentage < 100) {
+        std::cout << "\r[";
+
+        for (int i = 0; i < 22; ++i) {
+            std::cout << "━";
+        }
+
+        std::cout << "] 100%" << std::flush;
+    }
+
+    if (progress.last_percentage >= 0 || result == CURLE_OK) {
+        std::cout << '\n';
+    }
+
     std::cout << '\n';
     // long http_code{0};
     // curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &http_code
-   // print a newline and make sure to exit if the download fails.
+    // print a newline and make sure to exit if the download fails.
     file.close();
 
     if (result != CURLE_OK) {
         std::cerr << "Download failed: " << curl_easy_strerror(result) << '\n';
-       // std::cout << "HTTP status: " << http_code << '\n';
+        // std::cout << "HTTP status: " << http_code << '\n';
         std::filesystem::remove(output_path);
         curl_easy_cleanup(curl);
         return "";

@@ -1,0 +1,7 @@
+{
+	"InstallScripts" : 
+	[
+		"/home/voltik/Projects/omi/build-ninja/cmake_install.cmake"
+	],
+	"Parallel" : false
+}

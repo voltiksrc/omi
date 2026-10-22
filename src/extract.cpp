@@ -6,7 +6,7 @@
 
 using std::string;
 
-// im gonna be honest a lot of this is ai assisted, only extract tho, fuck libarchive
+// This file extracts the archive somewhat safely
 static int copy_data(struct archive *ar, struct archive *aw) {
     int r;
     const void *buff;

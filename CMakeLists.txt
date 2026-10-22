@@ -26,6 +26,8 @@ add_executable(omi
     src/sync.cpp
     src/database.cpp
     src/deploy.cpp
+    src/search.cpp
+    src/remove.cpp
 )
 
 target_link_libraries(omi PRIVATE

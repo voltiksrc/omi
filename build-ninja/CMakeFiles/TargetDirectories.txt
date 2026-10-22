@@ -1,0 +1,7 @@
+/home/voltik/Projects/omi/build-ninja/CMakeFiles/omi.dir
+/home/voltik/Projects/omi/build-ninja/CMakeFiles/edit_cache.dir
+/home/voltik/Projects/omi/build-ninja/CMakeFiles/rebuild_cache.dir
+/home/voltik/Projects/omi/build-ninja/CMakeFiles/list_install_components.dir
+/home/voltik/Projects/omi/build-ninja/CMakeFiles/install.dir
+/home/voltik/Projects/omi/build-ninja/CMakeFiles/install/local.dir
+/home/voltik/Projects/omi/build-ninja/CMakeFiles/install/strip.dir

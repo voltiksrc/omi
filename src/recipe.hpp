@@ -2,6 +2,7 @@
 
 #include <string>
 #include <filesystem>
+#include <vector>
 
 bool download_recipe(
     const std::string& url,
@@ -15,6 +16,9 @@ struct Package {
     std::string url;
     std::string sha256;
     std::string build_system;
+
+    std::string architecture;
+    std::vector<std::string> dependencies;
 };
 
 Package read_recipe(const std::string& path);

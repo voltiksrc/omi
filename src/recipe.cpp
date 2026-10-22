@@ -101,5 +101,8 @@ Package read_recipe(const std::string& path) {
     package.sha256 = recipe["source"]["sha256"].value_or("");
     package.build_system = recipe["build"]["system"].value_or("");
 
+    package.architecture = recipe["package"]["architecture"].value_or("");
+    package.dependencies = recipe["deps"]["requires"].value_or("");
+
     return package;
 }
