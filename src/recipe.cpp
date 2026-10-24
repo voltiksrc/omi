@@ -1,10 +1,10 @@
-#include <toml++/toml.hpp>
-#include <filesystem>
 #include <curl/curl.h>
+#include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <string>
 #include <system_error>
+#include <toml++/toml.hpp>
 
 #include "recipe.hpp"
 
@@ -26,21 +26,21 @@ static size_t write_callback(char *ptr, size_t size, size_t nmemb, void *userdat
     return total;
 }
 
-bool download_recipe(const std::string& url, const std::filesystem::path& destination) {
+bool download_recipe(const std::string &url, const std::filesystem::path &destination) {
     fs::create_directories(destination.parent_path());
 
     CURL *curl = curl_easy_init();
     if (!curl) {
-      std::cerr<<"Failed to initialize libcurl.\n";
-      return false;
+        std::cerr << "Failed to initialize libcurl.\n";
+        return false;
     }
 
-    fs::path output_path = destination.string() + ".tmp";  
+    fs::path output_path = destination.string() + ".tmp";
     fs::path final_name = destination;
 
     std::ofstream file(output_path, std::ios::binary);
     if (!file) {
-        std::cerr<<"Failed to open output file.\n";
+        std::cerr << "Failed to open output file.\n";
         curl_easy_cleanup(curl);
         return false;
     }
@@ -62,17 +62,17 @@ bool download_recipe(const std::string& url, const std::filesystem::path& destin
     curl_easy_setopt(curl, CURLOPT_REDIR_PROTOCOLS_STR, "https");
 
     CURLcode result = curl_easy_perform(curl);
-    std::cout<<'\n';
+    std::cout << '\n';
 
     file.close();
     if (result != CURLE_OK) {
-        std::cerr<<"Download failed: "<<curl_easy_strerror(result)<<'\n';
+        std::cerr << "Download failed: " << curl_easy_strerror(result) << '\n';
         fs::remove(output_path);
         curl_easy_cleanup(curl);
         return false;
     }
     if (file.fail()) {
-        std::cerr<<"Failed to write all the data to file.\n";
+        std::cerr << "Failed to write all the data to file.\n";
         fs::remove(output_path);
         curl_easy_cleanup(curl);
         return false;
@@ -80,7 +80,7 @@ bool download_recipe(const std::string& url, const std::filesystem::path& destin
     std::error_code ec;
     fs::rename(output_path, final_name, ec);
     if (ec) {
-        std::cerr<<"Failed to rename recipe: "<<ec.message()<<'\n';
+        std::cerr << "Failed to rename recipe: " << ec.message() << '\n';
         fs::remove(output_path);
         curl_easy_cleanup(curl);
         return false;
@@ -89,9 +89,9 @@ bool download_recipe(const std::string& url, const std::filesystem::path& destin
     return true;
 }
 
-Package read_recipe(const std::string& path) {
-   // Read and parse the recipe.
-   auto recipe = toml::parse_file(path);   
+Package read_recipe(const std::string &path) {
+    // Read and parse the recipe.
+    auto recipe = toml::parse_file(path);
 
     Package package;
 
@@ -101,8 +101,20 @@ Package read_recipe(const std::string& path) {
     package.sha256 = recipe["source"]["sha256"].value_or("");
     package.build_system = recipe["build"]["system"].value_or("");
 
-    // package.architecture = recipe["package"]["architecture"].value_or("");
-    // package.dependencies = recipe["deps"]["requires"].value_or("");
+    package.architecture = recipe["package"]["architecture"].value_or("x86_64");
+
+    package.dependencies.clear();
+
+    if (auto *deps = recipe["deps"]["requires"].as_array()) {
+        for (const auto &dep : *deps) {
+            auto value = dep.value<std::string>();
+
+            if (!value || value->empty())
+                continue;
+
+            package.dependencies.push_back(*value);
+        }
+    }
 
     return package;
 }

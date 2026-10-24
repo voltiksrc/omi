@@ -290,3 +290,51 @@ bool Database::remove_installation(const std::string &name) {
 
     return true;
 }
+
+
+bool Database::get_installed_packages(
+    std::vector<InstalledPackage> &packages
+) {
+    packages.clear();
+
+    const char *sql = "SELECT name, version FROM packages ORDER BY name;";
+
+    sqlite3_stmt *stmt = nullptr;
+
+    if (sqlite3_prepare_v2(db_, sql, -1, &stmt, nullptr) != SQLITE_OK) {
+        output::error("Failed to prepare installed package query: " +
+                      std::string(sqlite3_errmsg(db_)));
+        return false;
+    }
+
+    int result;
+
+    while ((result = sqlite3_step(stmt)) == SQLITE_ROW) {
+        const char *name = reinterpret_cast<const char *>(
+            sqlite3_column_text(stmt, 0)
+        );
+
+        const char *version = reinterpret_cast<const char *>(
+            sqlite3_column_text(stmt, 1)
+        );
+
+        if (!name || !version) {
+            output::error("Invalid installed package record.");
+            sqlite3_finalize(stmt);
+            packages.clear();
+            return false;
+        }
+
+        packages.push_back({name, version});
+    }
+
+    sqlite3_finalize(stmt);
+
+    if (result != SQLITE_DONE) {
+        output::error("Failed to read installed packages.");
+        packages.clear();
+        return false;
+    }
+
+    return true;
+}

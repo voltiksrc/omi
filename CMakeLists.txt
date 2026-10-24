@@ -1,3 +1,4 @@
+
 cmake_minimum_required(VERSION 3.20)
 
 project(omi VERSION 0.3 LANGUAGES CXX)
@@ -12,6 +13,8 @@ pkg_check_modules(CURL REQUIRED IMPORTED_TARGET libcurl)
 pkg_check_modules(ARCHIVE REQUIRED IMPORTED_TARGET libarchive)
 pkg_check_modules(TOMLPLUSPLUS REQUIRED IMPORTED_TARGET tomlplusplus)
 pkg_check_modules(SQLITE3 REQUIRED IMPORTED_TARGET sqlite3)
+pkg_check_modules(LIBSOLV REQUIRED IMPORTED_TARGET libsolv)
+pkg_check_modules(LIBSOLVEXT REQUIRED IMPORTED_TARGET libsolvext)
 
 add_executable(omi
     src/main.cpp
@@ -28,6 +31,7 @@ add_executable(omi
     src/deploy.cpp
     src/search.cpp
     src/remove.cpp
+    src/solver.cpp
 )
 
 target_link_libraries(omi PRIVATE
@@ -35,8 +39,18 @@ target_link_libraries(omi PRIVATE
     PkgConfig::ARCHIVE
     PkgConfig::TOMLPLUSPLUS
     PkgConfig::SQLITE3
+    PkgConfig::LIBSOLV
+    PkgConfig::LIBSOLVEXT
     OpenSSL::Crypto
 )
 
-install(TARGETS omi RUNTIME DESTINATION bin)
+add_executable(omi-gen-solv
+    tools/generate_solv.cpp
+)
 
+target_link_libraries(omi-gen-solv PRIVATE
+    PkgConfig::LIBSOLV
+    PkgConfig::TOMLPLUSPLUS
+)
+
+install(TARGETS omi RUNTIME DESTINATION bin)

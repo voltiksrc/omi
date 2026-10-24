@@ -1,4 +1,3 @@
-
 #pragma once
 
 #include <filesystem>
@@ -7,6 +6,11 @@
 #include <vector>
 
 enum class InstallStatus { Installed, NotInstalled, Error };
+
+struct InstalledPackage {
+    std::string name;
+    std::string version;
+};
 
 class Database {
   public:
@@ -29,6 +33,8 @@ class Database {
                                       std::vector<std::filesystem::path> &files);
 
     bool remove_installation(const std::string &name);
+
+    bool get_installed_packages(std::vector<InstalledPackage> &packages);
 
   private:
     sqlite3 *db_ = nullptr;

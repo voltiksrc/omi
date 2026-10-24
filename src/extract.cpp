@@ -175,13 +175,29 @@ bool extract_source(const string &archive_path, const string &name, const string
     // Make the build directories named by the package so no package gets overridden.
     fs::path builddir = destination / (name + "-" + version);
 
-    // Dont overwrite an old build directory or follow a symlink into somewhere else.
+    // Remove a previous build directory so the package can be rebuilt.
     std::error_code ec;
-    if (fs::exists(fs::symlink_status(builddir, ec))) {
-        output::error("Build directory already exists.");
+
+    auto status = fs::symlink_status(builddir, ec);
+
+    if (ec && ec != std::errc::no_such_file_or_directory) {
+        output::error("Failed to inspect build directory: " + ec.message());
         archive_read_free(reader);
         archive_write_free(writer);
         return false;
+    }
+
+    if (fs::exists(status)) {
+        output::stage("Cleaning previous build directory...");
+
+        fs::remove_all(builddir, ec);
+
+        if (ec) {
+            output::error("Failed to clean build directory: " + ec.message());
+            archive_read_free(reader);
+            archive_write_free(writer);
+            return false;
+        }
     }
 
     // Check that the parent directories arent symlinks either.
@@ -264,8 +280,8 @@ bool extract_source(const string &archive_path, const string &name, const string
             fs::path link_target = target;
 
             if (!safe_archive_path(link_target) || !safe_archive_path(relative) ||
-                archive_entry_filetype(entry) != AE_IFREG || archive_entry_size(entry) != 0 ||
-                link_target == relative) {
+                link_target == relative ||
+                (archive_entry_filetype(entry) != AE_IFREG && archive_entry_filetype(entry) != 0)) {
                 output::error("Unsafe hardlink: " + relative.string());
                 success = false;
                 break;
@@ -342,8 +358,9 @@ bool extract_source(const string &archive_path, const string &name, const string
 
     // Remember to free all the resources at the end so we dont leak!!
     archive_read_free(reader);
-    archive_write_free(writer);
-
+    if (writer) {
+        archive_write_free(writer);
+    }
     // Dont leave an incomplete build directory if something failed.
     if (!success) {
         fs::remove_all(builddir, ec);

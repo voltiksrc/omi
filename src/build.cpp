@@ -94,9 +94,20 @@ bool build_source(const Package &info, const std::filesystem::path &source_dir) 
              output::error("Go build failed, and you should go fix it.");
              return false;
          }
+    } else if (info.build_system == "openssl") {
+         output::info("Building with openssl backend...");
+
+         if (run_command({"./Configure", "--prefix=/usr", "--libdir=lib"}, source_dir) != 0) {
+             return false;
+         }
+         
+         if (run_command({"make", "-j8"}, source_dir) != 0) {
+             output::error("OpenSSL build failed, and you should go fix it.");
+             return false;
+         }
     } else {
-        output::error("Unsupported build system: " + info.build_system);
-        return false;
+         output::error("Unsupported build system: " + info.build_system);
+         return false;
     }
 
     output::stage("Build completed successfully. WOOHOO");

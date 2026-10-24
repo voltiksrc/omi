@@ -19,17 +19,13 @@ using std::string;
 namespace fs = std::filesystem;
 
 bool is_source_root(const fs::path &path) {
-    return fs::exists(path / "meson.build") ||
-           fs::exists(path / "CMakeLists.txt") ||
-           fs::exists(path / "configure") ||
-           fs::exists(path / "Makefile") ||
-           fs::exists(path / "Cargo.toml") ||
-           fs::exists(path / "wscript") ||
-           fs::exists(path / "go.mod") ||
-           fs::exists(path / "configure.ac");
+    return fs::exists(path / "meson.build") || fs::exists(path / "CMakeLists.txt") ||
+           fs::exists(path / "configure") || fs::exists(path / "Makefile") ||
+           fs::exists(path / "Cargo.toml") || fs::exists(path / "wscript") ||
+           fs::exists(path / "go.mod") || fs::exists(path / "Configure");
 }
 
-bool install_package(const string &package) {
+bool install_package(const string &package, const string &expected_version) {
 
     if (!fs::is_regular_file(".cache/repos/main/index.toml")) {
         output::error("Repository index missing, Run omi --sync first.");
@@ -64,6 +60,12 @@ bool install_package(const string &package) {
     }
 
     Package info = read_recipe(recipe_path.string());
+
+    if (info.name != package || info.version != expected_version) {
+        output::error("Recipe does not match the selected package: " + package + "-" +
+                      expected_version);
+        return false;
+    }
 
     fs::path target_root = "/tmp/omi-test-root";
     fs::path database_path = target_root / "var/lib/omi/installed.db";
@@ -121,11 +123,21 @@ bool install_package(const string &package) {
 
     // Find the source directory.
     fs::path extract_dir = fs::path(".cache/build") / (info.name + "-" + info.version);
+
     fs::path source_dir;
 
+    if (!fs::is_directory(extract_dir)) {
+        output::error("Extracted source directory is missing.");
+        return false;
+    }
+
+    // Check the extraction directory first.
     if (is_source_root(extract_dir)) {
         source_dir = extract_dir;
-    } else {
+    }
+
+    // Then check its immediate subdirectories.
+    if (source_dir.empty()) {
         for (const auto &entry : fs::directory_iterator(extract_dir)) {
             if (entry.is_directory() && is_source_root(entry.path())) {
                 source_dir = entry.path();
@@ -134,8 +146,18 @@ bool install_package(const string &package) {
         }
     }
 
+    // Finally, search deeper directories.
     if (source_dir.empty()) {
-        output::error("Could not locate package source directory.\n");
+        for (const auto &entry : fs::recursive_directory_iterator(extract_dir)) {
+            if (entry.is_directory() && is_source_root(entry.path())) {
+                source_dir = entry.path();
+                break;
+            }
+        }
+    }
+
+    if (source_dir.empty()) {
+        output::error("Could not locate package source directory.");
         return false;
     }
 
@@ -154,8 +176,6 @@ bool install_package(const string &package) {
         return false;
     }
     output::info("Files staged successfully.");
-
-    std::vector<fs::path> installed_files;
 
     output::stage("Deploying " + info.name + "-" + info.version);
 
