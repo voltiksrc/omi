@@ -5,7 +5,7 @@ A Hybrid C++ package manager that uses TOML recipes and has a relatively simple 
 ## Development
 
 It is an independent package manager that anyone can use, if you would
-like to help develop omi, then please contact me at: voltiksrc@gmail.com
+like to help develop omi, then please contact me at: tsukasatsa@gmail.com
 
 ## Features
 
