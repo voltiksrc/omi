@@ -14,6 +14,7 @@ like to help develop omi, then please contact me at: tsukasatsa@gmail.com
 - SHA256 Verification
 - Archive Extraction
 - Source building which supports 6 types
+- Basic Dependency resolution
 - Install staging
 - Merging into root
 
@@ -22,15 +23,16 @@ like to help develop omi, then please contact me at: tsukasatsa@gmail.com
 - libarchive
 - libcurl
 - libcrypto
+- libsolv
 - CMake
 - Toml++
 - Ninja
 - Make/Autotools
 - Meson
+- Cargo/rust
 
 ## Recommended dependencies
 - Go
-- Cargo
 - Waf
 
 ## Build
@@ -41,14 +43,14 @@ cd omi
 ```
 
 ```bash
-meson setup build
-meson compile -C build
+cmake -S . -B build -G ninja
+cmake --build build
 ```
 
 ## Install
 
 ```bash
-sudo meson install -C build
+sudo cmake --install build
 ```
 
 ## Usage
@@ -67,4 +69,5 @@ sudo omi -Fetch fastfetch
 
 ## Status
 
-It's able to download a tarball, verify with sha256, extract, stage, install.
+It's able to download a tarball, verify with sha256, extract,
+install dependencies, build, stage, and install.
